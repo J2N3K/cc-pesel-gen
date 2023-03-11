@@ -4,10 +4,14 @@ import random
 
 menu = ["Credit card generator", "PESEL generator", "About", "Exit"]
 exit_menu = ["Yes", "No"]
-logo1 = '   _____            __  _____                      __          '
-logo2 = '  / ___/__ ________/ / / ___/__ ___  ___ _______ _/ /____  ____'
-logo3 = ' / /__/ _ `/ __/ _  / / (_ / -_) _ \/ -_) __/ _ `/ __/ _ \/ __/'
-logo4 = ' \___/\_,_/_/  \_,_/  \___/\__/_//_/\__/_/  \_,_/\__/\___/_/   '
+logo_cc_1 = '   _____            __  _____                      __          '
+logo_cc_2 = '  / ___/__ ________/ / / ___/__ ___  ___ _______ _/ /____  ____'
+logo_cc_3 = ' / /__/ _ `/ __/ _  / / (_ / -_) _ \/ -_) __/ _ `/ __/ _ \/ __/'
+logo_cc_4 = ' \___/\_,_/_/  \_,_/  \___/\__/_//_/\__/_/  \_,_/\__/\___/_/   '
+logo_p_1 = '   ___  ______________     _____                      __          '
+logo_p_2 = '  / _ \/ __/ __/ __/ /    / ___/__ ___  ___ _______ _/ /____  ____'
+logo_p_3 = ' / ___/ _/_\ \/ _// /__  / (_ / -_) _ \/ -_) __/ _ `/ __/ _ \/ __/'
+logo_p_4 = '/_/  /___/___/___/____/  \___/\__/_//_/\__/_/  \_,_/\__/\___/_/   '
 
 
 def print_menu(stdscr, selected_row_index):
@@ -30,11 +34,11 @@ def print_credit_card_menu(stdscr):
     stdscr.clear()
     h, w = stdscr.getmaxyx()
     text = "Type in Visa/Mastercard/Mir and press CTRL+G or ENTER"
-    stdscr.addstr(h//3, w//2 - len(text)//2, text)
-    stdscr.addstr(h//5, w//2 - len(logo1)//2, logo1)
-    stdscr.addstr(h//5+1, w//2 - len(logo2)//2, logo2)
-    stdscr.addstr(h//5+2, w//2 - len(logo3)//2, logo3)
-    stdscr.addstr(h//5+3, w//2 - len(logo4)//2, logo4)
+    stdscr.addstr(h // 3, w // 2 - len(text) // 2, text)
+    stdscr.addstr(h // 5, w // 2 - len(logo_cc_1) // 2, logo_cc_1)
+    stdscr.addstr(h // 5 + 1, w // 2 - len(logo_cc_2) // 2, logo_cc_2)
+    stdscr.addstr(h // 5 + 2, w // 2 - len(logo_cc_3) // 2, logo_cc_3)
+    stdscr.addstr(h // 5 + 3, w // 2 - len(logo_cc_4) // 2, logo_cc_4)
     stdscr.refresh()
 
     curses.curs_set(1)
@@ -81,10 +85,68 @@ def print_credit_card_menu(stdscr):
 def print_pesel_menu(stdscr):
     stdscr.clear()
     h, w = stdscr.getmaxyx()
-    text = "PESEL generator coming soon..."
-    stdscr.addstr(h//2, w//2 - len(text)//2, text)
-    stdscr.addstr(0, 0, "Press any key (other than ENTER) to continue")
+    text = "Input date of birth and gender in the following format: DD/MM/YYYY M or F"
+    stdscr.addstr(h // 3, w // 2 - len(text) // 2, text)
+    stdscr.addstr(h // 5, w // 2 - len(logo_p_1) // 2, logo_p_1)
+    stdscr.addstr(h // 5 + 1, w // 2 - len(logo_p_2) // 2, logo_p_2)
+    stdscr.addstr(h // 5 + 2, w // 2 - len(logo_p_3) // 2, logo_p_3)
+    stdscr.addstr(h // 5 + 3, w // 2 - len(logo_p_4) // 2, logo_p_4)
     stdscr.refresh()
+
+    curses.curs_set(1)
+    input_window = curses.newwin(1, 15, 2, 2)
+    box = Textbox(input_window)
+    rectangle(stdscr, 1, 1, 3, 17)
+    stdscr.refresh()
+    box.edit()
+    input_text = box.gather()
+    input_text = input_text[:-1]
+    curses.curs_set(0)
+
+    DayOfBirth = input_text[:2]
+    MonthOfBirth = int(input_text[3:5])
+    YearOfBirth = int(input_text[6:10])
+    Gender = input_text[11]
+
+    if 1800 <= YearOfBirth <= 1899:
+        MonthOfBirth += 80
+    elif 1900 <= YearOfBirth <= 1999:
+        MonthOfBirth = str(MonthOfBirth)
+        MonthOfBirth = "0" + MonthOfBirth
+    elif 2000 <= YearOfBirth <= 2099:
+        MonthOfBirth += 20
+    elif 2100 <= YearOfBirth <= 2199:
+        MonthOfBirth += 40
+    elif 2200 <= YearOfBirth <= 2299:
+        MonthOfBirth += 60
+    elif YearOfBirth < 1800 or YearOfBirth > 2299:
+        exit()
+
+    if Gender == "M":
+        Gender = random.randrange(1, 10, 2)
+    elif Gender == "F":
+        Gender = random.randrange(0, 9, 2)
+    else:
+        exit()
+
+    MonthOfBirth = str(MonthOfBirth)
+    YearOfBirth = str(YearOfBirth)
+    Gender = str(Gender)
+    Series = str(random.randint(100, 999))
+
+    def checksum():
+        c = [int(YearOfBirth[2]), int(YearOfBirth[3]), int(MonthOfBirth[0]), int(MonthOfBirth[1]), int(DayOfBirth[0]),
+             int(DayOfBirth[1]), int(Series[0]), int(Series[1]), int(Series[2]), int(Gender)]
+        w = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3]
+        s = sum(map(lambda x, y: x * y, c, w))
+        m = s % 10
+        if m == 0:
+            return str(0)
+        else:
+            return str(10 - m)
+
+    PESEL = YearOfBirth[2:] + MonthOfBirth + DayOfBirth + Series + Gender + checksum()
+    stdscr.addstr(h//2, w//2 - 7, "PESEL: " + PESEL)
 
 
 def print_about_menu(stdscr):
