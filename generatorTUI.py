@@ -1,13 +1,18 @@
 import curses
 from curses.textpad import Textbox, rectangle
 import random
+import csv
 
-menu = ["Credit card generator", "PESEL generator", "About", "Exit"]
+menu = ["Credit card generator", "Credit card validator", "PESEL generator", "About", "Exit"]
 exit_menu = ["Yes", "No"]
 logo_cc_1 = '   _____            __  _____                      __          '
 logo_cc_2 = '  / ___/__ ________/ / / ___/__ ___  ___ _______ _/ /____  ____'
 logo_cc_3 = ' / /__/ _ `/ __/ _  / / (_ / -_) _ \/ -_) __/ _ `/ __/ _ \/ __/'
 logo_cc_4 = ' \___/\_,_/_/  \_,_/  \___/\__/_//_/\__/_/  \_,_/\__/\___/_/   '
+logo_cv_1 = '  _____            __  _   __     ___    __     __          '
+logo_cv_2 = ' / ___/__ ________/ / | | / /__ _/ (_)__/ /__ _/ /____  ____'
+logo_cv_3 = '/ /__/ _ `/ __/ _  /  | |/ / _ `/ / / _  / _ `/ __/ _ \/ __/'
+logo_cv_4 = '\___/\_,_/_/  \_,_/   |___/\_,_/_/_/\_,_/\_,_/\__/\___/_/   '
 logo_p_1 = '   ___  ______________     _____                      __          '
 logo_p_2 = '  / _ \/ __/ __/ __/ /    / ___/__ ___  ___ _______ _/ /____  ____'
 logo_p_3 = ' / ___/ _/_\ \/ _// /__  / (_ / -_) _ \/ -_) __/ _ `/ __/ _ \/ __/'
@@ -80,6 +85,56 @@ def print_credit_card_menu(stdscr):
     stdscr.addstr(h//2 + 1, w//2 - 20, "Credit card number: " + cc_w_luna)
     stdscr.addstr(h//2 + 2, w//2 - 17, "Expiration date: " + str(random.randint(1, 12)) + "/" + str(random.randint(2024, 2028)))
     stdscr.addstr(h//2 + 3, w//2 - 9, "CVC/CVV: " + str(random.randint(100, 999)))
+
+
+def print_card_validator_menu(stdscr):
+    stdscr.clear()
+    h, w = stdscr.getmaxyx()
+    text = "Visa and Mastercard card validator, input credit card number. PLEASE NOTE: LIMITED DATABASE!"
+    stdscr.addstr(h//3, w//2 - len(text)//2, text)
+    stdscr.addstr(h // 5, w // 2 - len(logo_cv_1) // 2, logo_cv_1)
+    stdscr.addstr(h // 5 + 1, w // 2 - len(logo_cv_2) // 2, logo_cv_2)
+    stdscr.addstr(h // 5 + 2, w // 2 - len(logo_cv_3) // 2, logo_cv_3)
+    stdscr.addstr(h // 5 + 3, w // 2 - len(logo_cv_4) // 2, logo_cv_4)
+    stdscr.refresh()
+
+    curses.curs_set(1)
+    input_window = curses.newwin(1, 15, 2, 2)
+    box = Textbox(input_window)
+    rectangle(stdscr, 1, 1, 3, 17)
+    stdscr.refresh()
+    box.edit()
+    input_text = box.gather()
+    input_text = input_text[:-1]
+    curses.curs_set(0)
+
+    if input_text[0] == '4':
+        with open("visabin.csv") as visa_csvfile:
+            reader = csv.DictReader(visa_csvfile)
+            counter = 0
+            n = 0
+            for row in reader:
+                if row["ACCT_NUM_MIN"] <= input_text[:9] <= row["ACCT_NUM_MAX"]:
+                    for key, val in row.items():
+                        stdscr.addstr(h // 2 + n, w // 5, key + ": " + val)
+                        n += 1
+                    counter += 1
+            stdscr.addstr(h // 3 + 2, w // 2 - len(str(counter) + " record(s)") // 2, str(counter) + " record(s)")
+            stdscr.refresh()
+
+    else:
+        with open("mastercardbin.csv", errors='ignore') as mastercard_csvfile:
+            reader = csv.DictReader(mastercard_csvfile)
+            counter = 0
+            n = 0
+            for row in reader:
+                if row["ACCOUNT_RANGE_FROM"] <= input_text[:10] <= row["ACCOUNT_RANGE_TO"]:
+                    for key, val in row.items():
+                        stdscr.addstr(h // 2 + n, w // 5, key + ": " + val)
+                        n += 1
+                    counter += 1
+            stdscr.addstr(h // 3 + 2, w // 2 - len(str(counter) + " record(s)") // 2, str(counter) + " record(s)")
+            stdscr.refresh()
 
 
 def print_pesel_menu(stdscr):
@@ -183,6 +238,7 @@ def main(stdscr):
 
     menu_running = 1
     credit_running = 0
+    card_validator_running = 0
     pesel_running = 0
     about_running = 0
     exit_running = 0
@@ -197,9 +253,12 @@ def main(stdscr):
             elif key == curses.KEY_DOWN and selected_row_index != len(menu)-1:
                 selected_row_index += 1
             elif key == curses.KEY_ENTER or key in [10,13]:
-                if selected_row_index == len(menu)-4:
+                if selected_row_index == len(menu)-5:
                     menu_running = 0
                     credit_running = 1
+                if selected_row_index == len(menu)-4:
+                    menu_running = 0
+                    card_validator_running = 1
                 if selected_row_index == len(menu)-3:
                     menu_running = 0
                     pesel_running = 1
@@ -222,6 +281,12 @@ def main(stdscr):
             stdscr.refresh()
             menu_running = 1
             credit_running = 0
+
+        while card_validator_running:
+            print_card_validator_menu(stdscr)
+            stdscr.refresh()
+            menu_running = 1
+            card_validator_running = 0
 
         while pesel_running:
             print_pesel_menu(stdscr)
